@@ -48,16 +48,38 @@ android {
         }
     }
 
-    val releaseKeystoreFile = file("release.keystore")
-    val hasReleaseKeystore = releaseKeystoreFile.exists()
+    val releaseKeystoreFile = sequenceOf(
+        file("roxy.keystore"),
+        file("roxypdftoolkit.keystore"),
+        file("release.keystore"),
+        file("release.jks"),
+        rootProject.file("roxy.keystore"),
+        rootProject.file("roxypdftoolkit.keystore"),
+        rootProject.file("release.keystore"),
+        rootProject.file("release.jks")
+    ).firstOrNull { it.exists() }
+
+    val hasReleaseKeystore = releaseKeystoreFile != null
+
+    val resolvedStorePassword = System.getenv("KEYSTORE_PASSWORD")
+        ?: System.getenv("KEY_STORE_PASSWORD")
+        ?: System.getenv("STORE_PASSWORD")
+        ?: "roxy_release_pass"
+
+    val resolvedKeyAlias = System.getenv("KEY_ALIAS")
+        ?: System.getenv("ALIAS")
+        ?: "roxypdftoolkit"
+
+    val resolvedKeyPassword = System.getenv("KEY_PASSWORD")
+        ?: resolvedStorePassword
 
     signingConfigs {
         create("release") {
             if (hasReleaseKeystore) {
                 storeFile = releaseKeystoreFile
-                storePassword = System.getenv("KEYSTORE_PASSWORD") ?: "roxy_release_pass"
-                keyAlias = System.getenv("KEY_ALIAS") ?: "roxypdftoolkit"
-                keyPassword = System.getenv("KEY_PASSWORD") ?: "roxy_release_pass"
+                storePassword = resolvedStorePassword
+                keyAlias = resolvedKeyAlias
+                keyPassword = resolvedKeyPassword
             } else {
                 initWith(signingConfigs.getByName("debug"))
             }

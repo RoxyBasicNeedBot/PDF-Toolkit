@@ -80,18 +80,30 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Generate Clean Release Keystore
+      - name: Setup Signing Keystore from Secrets
+        env:
+          BASE_64_SIGNING_KEY: ${{ secrets.BASE_64_SIGNING_KEY }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD || secrets.KEY_STORE_PASSWORD || 'roxy_release_pass' }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS || secrets.ALIAS || 'roxypdftoolkit' }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD || 'roxy_release_pass' }}
         run: |
           mkdir -p androidApp
-          keytool -genkeypair -v \
-            -keystore androidApp/release.keystore \
-            -alias roxypdftoolkit \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 \
-            -storepass roxy_release_pass \
-            -keypass roxy_release_pass \
-            -dname "CN=Roxy PDF Toolkit, OU=Mobile, O=Roxy, L=New Delhi, ST=Delhi, C=IN"
+          if [ -n "$BASE_64_SIGNING_KEY" ]; then
+            echo "🔐 Decoding BASE_64_SIGNING_KEY from GitHub Secrets..."
+            echo "$BASE_64_SIGNING_KEY" | base64 -d > androidApp/roxy.keystore
+            echo "✅ Successfully decoded secret keystore to androidApp/roxy.keystore"
+          else
+            echo "⚠️ BASE_64_SIGNING_KEY not set in Secrets. Generating clean standalone release keystore..."
+            keytool -genkeypair -v \
+              -keystore androidApp/roxy.keystore \
+              -alias "$KEY_ALIAS" \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -storepass "$KEYSTORE_PASSWORD" \
+              -keypass "$KEY_PASSWORD" \
+              -dname "CN=Roxy PDF Toolkit, OU=Mobile, O=Roxy, L=New Delhi, ST=Delhi, C=IN"
+          fi
 
       - name: Generate Dynamic App Version
         id: app_version
@@ -113,9 +125,11 @@ jobs:
         env:
           APP_VERSION_NAME: ${{ steps.app_version.outputs.version }}
           APP_VERSION_CODE: ${{ steps.app_version.outputs.version_code }}
-          KEYSTORE_PASSWORD: "roxy_release_pass"
-          KEY_ALIAS: "roxypdftoolkit"
-          KEY_PASSWORD: "roxy_release_pass"
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD || secrets.KEY_STORE_PASSWORD || 'roxy_release_pass' }}
+          KEY_STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD || secrets.KEY_STORE_PASSWORD || 'roxy_release_pass' }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS || secrets.ALIAS || 'roxypdftoolkit' }}
+          ALIAS: ${{ secrets.KEY_ALIAS || secrets.ALIAS || 'roxypdftoolkit' }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD || 'roxy_release_pass' }}
 
       - name: Collect and Standardize Artifacts
         id: organize_artifacts
@@ -188,7 +202,7 @@ jobs:
             
             #### ⚡ Key Features & Optimizations
             - **🔒 100% Offline & Private**: Zero internet permissions, no data leaves your device.
-            - **💎 Liquid Glass UI**: SimpMusic-inspired adaptive glass containers, real-time background shader mesh, and spring animations.
+            - **💎 Liquid Glass UI**: Adaptive glass containers, real-time background shader mesh, and spring animations.
             - **🚀 R8 Minification & Shrinking**: Full code and resource shrinking applied (`proguard-android-optimize.txt`).
             - **📱 Multi-Architecture Builds**: Universal, ARM64, ARMv7, and x86_64 target APKs + Google Play App Bundle (`.aab`).
             - **📄 PDF Tools**: Streaming PDF Merge, Smart Document Scanner with perspective warp homography and Magic Clean shadow elimination.

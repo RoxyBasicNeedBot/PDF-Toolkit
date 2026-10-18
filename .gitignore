@@ -1,0 +1,13 @@
+*.keystore
+*.jks
+*_base64.txt
+.gradle/
+build/
+*/build/
+*.hprof
+local.properties
+.idea/
+.DS_Store
+__pycache__/
+*.pyc
+dist/

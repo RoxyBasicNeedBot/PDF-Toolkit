@@ -18,21 +18,35 @@ class RoxyApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
-        // 1. Initialize Sentry.io Crash Reporting
+        // 1. Initialize Sentry.io Crash Reporting (Advanced Production Setup)
         try {
-            val secretDsn = BuildConfig.SENTRY_DSN
+            val dsn = BuildConfig.SENTRY_DSN.ifBlank {
+                "https://2e2030156a1f0e86b6c4baf6d9eb66d1@o4512277906391040.ingest.de.sentry.io/4512277919629392"
+            }
             SentryAndroid.init(this) { options ->
-                if (secretDsn.isNotBlank()) {
-                    options.dsn = secretDsn
-                }
+                options.dsn = dsn
                 options.tracesSampleRate = 1.0
-                options.isAttachScreenshot = false
-                options.isAttachViewHierarchy = false
-                options.setDebug(false)
+                options.isDebug = true
+                options.environment = "production"
+                options.release = "com.roxy.pdftoolkit@${BuildConfig.VERSION_NAME}+${BuildConfig.VERSION_CODE}"
+                options.dist = BuildConfig.ARCHITECTURE
+                options.isAttachStacktrace = true
+                options.isAttachThreads = true
+                options.isAnrEnabled = true
+                options.anrTimeoutIntervalMillis = 4000L
+                options.isEnableAutoSessionTracking = true
+                options.sessionTrackingIntervalMillis = 10000L
+                options.flushTimeoutMillis = 5000L
+                options.setTag("architecture", BuildConfig.ARCHITECTURE)
+                options.setTag("android_sdk", android.os.Build.VERSION.SDK_INT.toString())
+                options.setTag("device_model", android.os.Build.MODEL)
+                options.setTag("device_manufacturer", android.os.Build.MANUFACTURER)
             }
-            if (secretDsn.isNotBlank()) {
-                Sentry.captureMessage("PDF Toolkit initialized with Sentry successfully!")
-            }
+
+            // Immediately dispatch a live verified startup event to Sentry
+            Sentry.captureMessage("PDF Toolkit v${BuildConfig.VERSION_NAME} (${BuildConfig.ARCHITECTURE}) launched successfully on ${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}")
+            Sentry.flush(3000)
+            Log.d("RoxyApp", "Sentry initialized and verified successfully!")
         } catch (e: Exception) {
             Log.e("RoxyApp", "Failed to init Sentry", e)
         }
@@ -43,6 +57,7 @@ class RoxyApplication : Application() {
                 Log.e("RoxyCrash", "[$tag] Exception: ${throwable.message}", throwable)
                 try {
                     Sentry.captureException(throwable)
+                    Sentry.flush(3000)
                 } catch (_: Exception) {}
             },
             onBreadcrumb = { action, category ->
@@ -61,7 +76,11 @@ class RoxyApplication : Application() {
         val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
             Log.e("RoxyCrash", "FATAL CRASH in thread ${thread.name}: ${throwable.message}", throwable)
-            RoxyCrashTracker.captureException(throwable, tag = "UncaughtException")
+            try {
+                RoxyCrashTracker.captureException(throwable, tag = "UncaughtException")
+                Sentry.captureException(throwable)
+                Sentry.flush(4000)
+            } catch (_: Exception) {}
             defaultHandler?.uncaughtException(thread, throwable)
         }
 

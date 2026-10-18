@@ -36,4 +36,17 @@ object RoxyCrashTracker {
             exceptionHandler?.invoke(throwable, tag)
         } catch (_: Exception) {}
     }
+
+    /**
+     * Trigger an intentional test exception to verify live Sentry connectivity.
+     */
+    fun triggerVerificationTest(forceFatalCrash: Boolean = false) {
+        logAction("Verification test triggered from UI (fatal=$forceFatalCrash)", category = "test")
+        val testException = IllegalStateException("Roxy PDF Toolkit Sentry Live Verification: Test exception from device")
+        captureException(testException, tag = "SentryLiveTest")
+        if (forceFatalCrash) {
+            throw testException
+        }
+    }
 }
+

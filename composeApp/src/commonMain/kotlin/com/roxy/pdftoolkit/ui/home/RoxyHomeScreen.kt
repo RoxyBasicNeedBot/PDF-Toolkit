@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.BugReport
 import androidx.compose.material.icons.rounded.CallSplit
 import androidx.compose.material.icons.rounded.Collections
 import androidx.compose.material.icons.rounded.DocumentScanner
@@ -27,6 +28,7 @@ import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material.icons.rounded.SwapVert
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import com.roxy.pdftoolkit.crash.RoxyCrashTracker
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -86,7 +88,7 @@ fun RoxyHomeScreen(
             ) {
                 Column {
                     Text(
-                        text = "Roxy PDF",
+                        text = "PDF Toolkit",
                         color = Color.White,
                         fontSize = 28.sp,
                         fontWeight = FontWeight.Bold
@@ -98,20 +100,45 @@ fun RoxyHomeScreen(
                     )
                 }
 
-                RoxyGlassCard(
-                    backdrop = backdrop,
-                    shape = RoundedCornerShape(14.dp),
-                    tintColor = RoxyColor.Primary,
-                    scrimAlpha = 0.3f,
-                    interactive = false,
-                    modifier = Modifier.size(46.dp)
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Shield,
-                        contentDescription = "Offline Protected",
-                        tint = RoxyColor.Primary,
-                        modifier = Modifier.size(24.dp)
-                    )
+                    // Sentry Live Verification Action
+                    RoxyGlassCard(
+                        backdrop = backdrop,
+                        shape = RoundedCornerShape(14.dp),
+                        tintColor = Color(0xFFEF4444),
+                        scrimAlpha = 0.25f,
+                        interactive = true,
+                        onClick = {
+                            RoxyCrashTracker.triggerVerificationTest(forceFatalCrash = false)
+                        },
+                        modifier = Modifier.size(46.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.BugReport,
+                            contentDescription = "Test Sentry Reporting",
+                            tint = Color(0xFFF87171),
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+
+                    RoxyGlassCard(
+                        backdrop = backdrop,
+                        shape = RoundedCornerShape(14.dp),
+                        tintColor = RoxyColor.Primary,
+                        scrimAlpha = 0.3f,
+                        interactive = false,
+                        modifier = Modifier.size(46.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Shield,
+                            contentDescription = "Offline Protected",
+                            tint = RoxyColor.Primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
                 }
             }
 

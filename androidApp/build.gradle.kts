@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.compose.compiler)
 }
 
@@ -10,9 +11,9 @@ android {
     val envVersionName = System.getenv("APP_VERSION_NAME")
     val envVersionCode = System.getenv("APP_VERSION_CODE")?.toIntOrNull()
 
-    val sentryDsn = System.getenv("SENTRY_DSN")
-        ?: (project.findProperty("SENTRY_DSN") as? String)
-        ?: ""
+    val sentryDsn = System.getenv("SENTRY_DSN")?.takeIf { it.isNotBlank() }
+        ?: (project.findProperty("SENTRY_DSN") as? String)?.takeIf { it.isNotBlank() }
+        ?: "https://2e2030156a1f0e86b6c4baf6d9eb66d1@o4512277906391040.ingest.de.sentry.io/4512277919629392"
 
     defaultConfig {
         applicationId = "com.roxy.pdftoolkit"
@@ -26,6 +27,12 @@ android {
 
         manifestPlaceholders["sentryDsn"] = sentryDsn
         buildConfigField("String", "SENTRY_DSN", "\"$sentryDsn\"")
+    }
+
+    sourceSets {
+        getByName("main") {
+            java.srcDirs("src/main/kotlin", "src/main/java")
+        }
     }
 
     flavorDimensions += listOf("abi")

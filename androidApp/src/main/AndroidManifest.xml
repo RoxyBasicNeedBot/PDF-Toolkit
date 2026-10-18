@@ -2,6 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
         android:name=".RoxyApplication"
@@ -12,10 +13,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.RoxyPdfToolkit">
 
-        <!-- Sentry.io Crash Reporting (Injected via GitHub Actions Secret: SENTRY_DSN) -->
+        <!-- Sentry.io Crash Reporting -->
         <meta-data android:name="io.sentry.dsn" android:value="${sentryDsn}" />
         <meta-data android:name="io.sentry.auto-init" android:value="true" />
         <meta-data android:name="io.sentry.traces.sample-rate" android:value="1.0" />
+        <meta-data android:name="io.sentry.anr.enable" android:value="true" />
+        <meta-data android:name="io.sentry.anr.timeout-interval-millis" android:value="4000" />
 
         <activity
             android:name=".RoxyMainActivity"

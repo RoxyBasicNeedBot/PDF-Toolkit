@@ -125,6 +125,7 @@ jobs:
         env:
           APP_VERSION_NAME: ${{ steps.app_version.outputs.version }}
           APP_VERSION_CODE: ${{ steps.app_version.outputs.version_code }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD || secrets.KEY_STORE_PASSWORD || 'roxy_release_pass' }}
           KEY_STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD || secrets.KEY_STORE_PASSWORD || 'roxy_release_pass' }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS || secrets.ALIAS || 'roxypdftoolkit' }}

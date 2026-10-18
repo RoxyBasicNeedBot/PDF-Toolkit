@@ -10,6 +10,10 @@ android {
     val envVersionName = System.getenv("APP_VERSION_NAME")
     val envVersionCode = System.getenv("APP_VERSION_CODE")?.toIntOrNull()
 
+    val sentryDsn = System.getenv("SENTRY_DSN")
+        ?: (project.findProperty("SENTRY_DSN") as? String)
+        ?: ""
+
     defaultConfig {
         applicationId = "com.roxy.pdftoolkit"
         minSdk = 26
@@ -19,6 +23,9 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
+
+        manifestPlaceholders["sentryDsn"] = sentryDsn
+        buildConfigField("String", "SENTRY_DSN", "\"$sentryDsn\"")
     }
 
     flavorDimensions += listOf("abi")

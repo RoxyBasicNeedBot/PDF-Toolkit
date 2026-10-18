@@ -20,7 +20,11 @@ class RoxyApplication : Application() {
 
         // 1. Initialize Sentry.io Crash Reporting
         try {
+            val secretDsn = BuildConfig.SENTRY_DSN
             SentryAndroid.init(this) { options ->
+                if (secretDsn.isNotBlank()) {
+                    options.dsn = secretDsn
+                }
                 options.tracesSampleRate = 1.0
                 options.isAttachScreenshot = false
                 options.isAttachViewHierarchy = false

@@ -18,3 +18,7 @@ OWNER_CHAT_ID=
 TOPIC_ID=
 API_ID=
 API_HASH=
+
+# --- Sentry.io Secrets (for live crash reporting & tracing) ---
+# SENTRY_DSN     : Sentry DSN URL from Sentry.io project settings (e.g., https://xxx@xxx.ingest.sentry.io/xxx)
+SENTRY_DSN=

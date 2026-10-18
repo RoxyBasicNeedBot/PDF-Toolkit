@@ -12,7 +12,8 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.RoxyPdfToolkit">
 
-        <!-- Sentry.io Crash Reporting -->
+        <!-- Sentry.io Crash Reporting (Injected via GitHub Actions Secret: SENTRY_DSN) -->
+        <meta-data android:name="io.sentry.dsn" android:value="${sentryDsn}" />
         <meta-data android:name="io.sentry.auto-init" android:value="true" />
         <meta-data android:name="io.sentry.traces.sample-rate" android:value="1.0" />
 

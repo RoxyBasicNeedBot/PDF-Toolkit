@@ -44,7 +44,7 @@ kotlin {
             // Android PDF Engine
             implementation(libs.pdfbox.android)
 
-            // CameraX Engine (Discovered from Adobe Scan binary inspection)
+            // CameraX Engine
             implementation(libs.androidx.camera.core)
             implementation(libs.androidx.camera.camera2)
             implementation(libs.androidx.camera.lifecycle)

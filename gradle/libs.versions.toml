@@ -23,10 +23,10 @@ haze = "1.1.1"
 # PDF Engine (Clean Android & JVM)
 pdfbox-android = "2.0.27.0"
 
-# CameraX (Revealed by REA from Adobe Scan libimage_processing_util_jni.so)
+# CameraX
 camerax = "1.4.0"
 
-# Machine Learning & Document Scanner (Revealed by REA from libMagicClean.so)
+# Machine Learning & Document Scanner
 tensorflow-lite = "2.16.1"
 mlkit-document-scanner = "16.0.0-beta1"
 

@@ -1,0 +1,20 @@
+# Roxy PDF Toolkit - Secrets & Local Properties Template
+# Use this as a reference for GitHub Actions Secrets
+
+# --- Keystore Secrets (for signing Release APKs & AAB) ---
+# BASE_64_SIGNING_KEY : Paste the base64 string from androidApp/roxy_keystore_base64.txt
+KEYSTORE_PASSWORD=roxy_release_pass
+KEY_ALIAS=roxypdftoolkit
+KEY_PASSWORD=roxy_release_pass
+
+# --- Telegram Secrets (Optional - for build notifications & direct APK delivery) ---
+# BOT_TOKEN     : Telegram Bot token from @BotFather
+# OWNER_CHAT_ID : Your Telegram user ID or group ID (e.g., from @userinfobot)
+# TOPIC_ID      : (Optional) Forum thread ID if posting to a supergroup topic
+# API_ID        : (Optional) Telegram App API ID from my.telegram.org (for fast MTProto 2.0 uploads)
+# API_HASH      : (Optional) Telegram App API Hash from my.telegram.org
+BOT_TOKEN=
+OWNER_CHAT_ID=
+TOPIC_ID=
+API_ID=
+API_HASH=

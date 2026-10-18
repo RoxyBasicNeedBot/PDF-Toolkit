@@ -40,6 +40,7 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodel.compose)
             implementation(libs.androidx.lifecycle.runtime.compose)
             implementation(libs.kotlinx.coroutines.android)
+            implementation(libs.koin.android)
 
             // Android PDF Engine
             implementation(libs.pdfbox.android)

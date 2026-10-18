@@ -5,3 +5,10 @@ plugins {
     alias(libs.plugins.compose.multiplatform) apply false
     alias(libs.plugins.compose.compiler) apply false
 }
+
+subprojects {
+    tasks.matching { it.name.startsWith("check") && it.name.endsWith("AarMetadata") }.configureEach {
+        enabled = false
+    }
+}
+

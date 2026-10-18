@@ -7,12 +7,15 @@ android {
     namespace = "com.roxy.pdftoolkit"
     compileSdk = 35
 
+    val envVersionName = System.getenv("APP_VERSION_NAME")
+    val envVersionCode = System.getenv("APP_VERSION_CODE")?.toIntOrNull()
+
     defaultConfig {
         applicationId = "com.roxy.pdftoolkit"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = envVersionCode ?: 1
+        versionName = envVersionName ?: "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -45,6 +48,22 @@ android {
         }
     }
 
+    val releaseKeystoreFile = file("release.keystore")
+    val hasReleaseKeystore = releaseKeystoreFile.exists()
+
+    signingConfigs {
+        create("release") {
+            if (hasReleaseKeystore) {
+                storeFile = releaseKeystoreFile
+                storePassword = System.getenv("KEYSTORE_PASSWORD") ?: "roxy_release_pass"
+                keyAlias = System.getenv("KEY_ALIAS") ?: "roxypdftoolkit"
+                keyPassword = System.getenv("KEY_PASSWORD") ?: "roxy_release_pass"
+            } else {
+                initWith(signingConfigs.getByName("debug"))
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
@@ -53,7 +72,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
         }
         debug {
             applicationIdSuffix = ".debug"

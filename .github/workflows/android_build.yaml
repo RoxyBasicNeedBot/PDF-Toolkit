@@ -1,0 +1,220 @@
+name: Build & Release Roxy PDF Toolkit
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ 'main', 'dev' ]
+    paths-ignore:
+      - 'README.md'
+      - 'docs/**'
+      - 'assets/**'
+      - '.github/**/*.md'
+      - '.github/ISSUE_TEMPLATE/**'
+  pull_request:
+    branches: [ 'main', 'dev' ]
+    paths-ignore:
+      - 'README.md'
+      - 'docs/**'
+      - 'assets/**'
+      - '.github/**/*.md'
+      - '.github/ISSUE_TEMPLATE/**'
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  notifyTelegram:
+    name: Notify Telegram
+    if: github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && github.actor != 'renovate[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install Dependencies
+        run: |
+          pip install requests
+
+      - name: Send start notification to Telegram
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.OWNER_CHAT_ID || secrets.CHAT_ID }}
+          TOPIC_ID: ${{ secrets.TOPIC_ID }}
+        run: |
+          python ./.github/workflows/notify_telegram.py
+        continue-on-error: true
+
+  build:
+    name: Build Release APKs & Bundles
+    if: github.actor != 'dependabot[bot]' && github.actor != 'renovate[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set Up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: 17
+          distribution: temurin
+
+      - name: Set Up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          validate-wrappers: true
+          cache-cleanup: on-success
+          cache-read-only: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/dev' }}
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Generate Clean Release Keystore
+        run: |
+          mkdir -p androidApp
+          keytool -genkeypair -v \
+            -keystore androidApp/release.keystore \
+            -alias roxypdftoolkit \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -storepass roxy_release_pass \
+            -keypass roxy_release_pass \
+            -dname "CN=Roxy PDF Toolkit, OU=Mobile, O=Roxy, L=New Delhi, ST=Delhi, C=IN"
+
+      - name: Generate Dynamic App Version
+        id: app_version
+        shell: bash
+        run: |
+          BASE_VERSION="1.0"
+          RUN_NUM="${{ github.run_number }}"
+          VERSION_NAME="${BASE_VERSION}.${RUN_NUM}"
+          VERSION_CODE=$((100 + RUN_NUM))
+          echo "APP_VERSION_NAME=${VERSION_NAME}" >> $GITHUB_ENV
+          echo "APP_VERSION_CODE=${VERSION_CODE}" >> $GITHUB_ENV
+          echo "version=${VERSION_NAME}" >> "$GITHUB_OUTPUT"
+          echo "version_code=${VERSION_CODE}" >> "$GITHUB_OUTPUT"
+          echo "tag_name=v${VERSION_NAME}" >> "$GITHUB_OUTPUT"
+          echo "Dynamic Version Assigned: ${VERSION_NAME} (Code: ${VERSION_CODE}, Tag: v${VERSION_NAME})"
+
+      - name: Build Release APKs and Bundles with R8 Minify & ShrinkResources
+        run: ./gradlew assembleRelease bundleRelease -x test -x lint
+        env:
+          APP_VERSION_NAME: ${{ steps.app_version.outputs.version }}
+          APP_VERSION_CODE: ${{ steps.app_version.outputs.version_code }}
+          KEYSTORE_PASSWORD: "roxy_release_pass"
+          KEY_ALIAS: "roxypdftoolkit"
+          KEY_PASSWORD: "roxy_release_pass"
+
+      - name: Collect and Standardize Artifacts
+        id: organize_artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          V="${{ steps.app_version.outputs.version }}"
+
+          echo "=== 🔍 Locating and copying APK outputs ==="
+          # Universal APK
+          find androidApp/build/outputs/apk -type f -name "*universal*release*.apk" -exec cp {} dist/Roxy-PDF-Toolkit-v${V}-universal.apk \; || true
+          # Arm64 APK
+          find androidApp/build/outputs/apk -type f -name "*arm64*release*.apk" -exec cp {} dist/Roxy-PDF-Toolkit-v${V}-arm64-v8a.apk \; || true
+          # Armeabi APK
+          find androidApp/build/outputs/apk -type f -name "*armeabi*release*.apk" -exec cp {} dist/Roxy-PDF-Toolkit-v${V}-armeabi-v7a.apk \; || true
+          # x86_64 APK
+          find androidApp/build/outputs/apk -type f -name "*x86_64*release*.apk" -exec cp {} dist/Roxy-PDF-Toolkit-v${V}-x86_64.apk \; || true
+
+          # If flavored naming differed, capture any remaining release APKs
+          if [ -z "$(ls -A dist/*.apk 2>/dev/null)" ]; then
+            find androidApp/build/outputs/apk -type f -name "*.apk" -exec cp {} dist/ \;
+          fi
+
+          echo "=== 🔍 Locating and copying AAB bundle outputs ==="
+          find androidApp/build/outputs/bundle -type f -name "*.aab" -exec cp {} dist/Roxy-PDF-Toolkit-v${V}-bundle.aab \; || true
+
+          echo "=== 🔒 Generating SHA-256 Checksums ==="
+          cd dist
+          sha256sum * > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+          cd ..
+
+          echo "Final collected artifacts:"
+          ls -lh dist/
+
+      - name: Upload Artifacts to Workflow Run
+        uses: actions/upload-artifact@v4
+        with:
+          name: Roxy-PDF-Toolkit-v${{ steps.app_version.outputs.version }}
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Send APK to Telegram Owner
+        if: github.event_name != 'pull_request'
+        continue-on-error: true
+        run: |
+          echo "=== 🚀 Installing Pyrogram, TgCrypto & Requests for MTProto 2.0 Uploads ==="
+          pip install --quiet pyrogram tgcrypto requests
+          python3 scripts/telegram_upload.py
+        env:
+          VERSION: ${{ steps.app_version.outputs.version }}
+          VERSION_CODE: ${{ steps.app_version.outputs.version_code }}
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          API_ID: ${{ secrets.API_ID }}
+          API_HASH: ${{ secrets.API_HASH }}
+          OWNER_CHAT_ID: ${{ secrets.OWNER_CHAT_ID || secrets.CHAT_ID }}
+
+      - name: Create or Update Versioned Release
+        if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.app_version.outputs.tag_name }}
+          name: "Roxy PDF Toolkit v${{ steps.app_version.outputs.version }} (Liquid Glass UI & Full R8 Optimization)"
+          body: |
+            ### 📄 Roxy PDF Toolkit v${{ steps.app_version.outputs.version }}
+            
+            An offline-first, private Android PDF utility app built with Kotlin Compose Multiplatform and Liquid Glass design.
+            
+            #### ⚡ Key Features & Optimizations
+            - **🔒 100% Offline & Private**: Zero internet permissions, no data leaves your device.
+            - **💎 Liquid Glass UI**: SimpMusic-inspired adaptive glass containers, real-time background shader mesh, and spring animations.
+            - **🚀 R8 Minification & Shrinking**: Full code and resource shrinking applied (`proguard-android-optimize.txt`).
+            - **📱 Multi-Architecture Builds**: Universal, ARM64, ARMv7, and x86_64 target APKs + Google Play App Bundle (`.aab`).
+            - **📄 PDF Tools**: Streaming PDF Merge, Smart Document Scanner with perspective warp homography and Magic Clean shadow elimination.
+            
+            #### 🛡️ Verification Checksums
+            See attached `SHA256SUMS.txt` for cryptographic hash validation.
+          draft: false
+          prerelease: false
+          make_latest: true
+          files: |
+            dist/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update Rolling latest-build Release
+        if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest-build
+          name: "Roxy PDF Toolkit Latest Build (Rolling)"
+          body: |
+            Bleeding-edge automated build from commit `${{ github.sha }}` on `${{ github.ref_name }}` branch.
+          draft: false
+          prerelease: true
+          make_latest: false
+          files: |
+            dist/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

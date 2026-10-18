@@ -7,7 +7,6 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -27,6 +26,8 @@ import com.roxy.pdftoolkit.ui.theme.RoxyMeshBackground
 import com.roxy.pdftoolkit.ui.theme.RoxyTheme
 import com.roxy.pdftoolkit.ui.tools.merge.RoxyMergeToolScreen
 import com.roxy.pdftoolkit.ui.tools.merge.RoxyMergeViewModel
+import com.roxy.pdftoolkit.ui.tools.scan.RoxyScanToolScreen
+import com.roxy.pdftoolkit.ui.tools.scan.RoxyScanViewModel
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -45,8 +46,9 @@ fun RoxyApp(
         var currentNavDestination by remember { mutableStateOf<RoxyNavDestination>(RoxyNavDestination.Tools) }
         var activeToolId by remember { mutableStateOf<String?>(null) }
 
-        // Inject ViewModel
+        // Inject ViewModels via Koin
         val mergeViewModel: RoxyMergeViewModel = koinViewModel()
+        val scanViewModel: RoxyScanViewModel = koinViewModel()
 
         // Handle incoming shared files (e.g. from WhatsApp intent filter)
         LaunchedEffect(initialSharedUris) {
@@ -77,6 +79,19 @@ fun RoxyApp(
                     )
                 }
 
+                activeToolId == "scan" || currentNavDestination is RoxyNavDestination.Scan -> {
+                    RoxyScanToolScreen(
+                        viewModel = scanViewModel,
+                        onBackClick = {
+                            activeToolId = null
+                            currentNavDestination = RoxyNavDestination.Tools
+                        },
+                        onSaveRequested = { onSaveFileRequest?.invoke() },
+                        onOpenFile = { uri -> onOpenFileRequest?.invoke(uri) },
+                        onShareFile = { uri -> onShareFileRequest?.invoke(uri) }
+                    )
+                }
+
                 else -> {
                     // Main Tab Screens
                     when (currentNavDestination) {
@@ -87,21 +102,15 @@ fun RoxyApp(
                             )
                         }
                         is RoxyNavDestination.Files -> {
-                            // Recent files hub (placeholder for Phase 1)
                             RoxyHomeScreen(
                                 backdrop = backdrop,
                                 onToolClick = { toolId -> activeToolId = toolId }
                             )
                         }
                         is RoxyNavDestination.Scan -> {
-                            // Document Scanner tab
-                            RoxyHomeScreen(
-                                backdrop = backdrop,
-                                onToolClick = { toolId -> activeToolId = toolId }
-                            )
+                            // Handled above in when branch
                         }
                         is RoxyNavDestination.Settings -> {
-                            // Settings tab
                             RoxyHomeScreen(
                                 backdrop = backdrop,
                                 onToolClick = { toolId -> activeToolId = toolId }
@@ -111,9 +120,9 @@ fun RoxyApp(
                 }
             }
 
-            // 3. Floating Bottom Navigation Bar (Visible only on top-level screens)
+            // 3. Floating Bottom Navigation Bar (Visible only when not inside a full tool screen)
             AnimatedVisibility(
-                visible = activeToolId == null,
+                visible = activeToolId == null && currentNavDestination !is RoxyNavDestination.Scan,
                 enter = fadeIn() + slideInVertically(initialOffsetY = { it }),
                 exit = fadeOut() + slideOutVertically(targetOffsetY = { it }),
                 modifier = Modifier.align(Alignment.BottomCenter)

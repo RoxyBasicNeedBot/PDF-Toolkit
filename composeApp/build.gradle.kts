@@ -39,6 +39,8 @@ kotlin {
             implementation(libs.haze)
 
             // Architecture & Dependency Injection
+            implementation(libs.androidx.lifecycle.viewmodel.compose)
+            implementation(libs.androidx.lifecycle.runtime.compose)
             implementation(libs.koin.core)
             implementation(libs.koin.compose)
             implementation(libs.koin.compose.viewmodel)

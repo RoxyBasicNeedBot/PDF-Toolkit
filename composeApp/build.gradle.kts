@@ -6,9 +6,23 @@ plugins {
 }
 
 kotlin {
-    androidTarget()
+    androidTarget {
+        compilerOptions {
+            freeCompilerArgs.addAll(
+                "-Xskip-metadata-version-check",
+                "-Xskip-prerelease-check"
+            )
+        }
+    }
     
-    jvm("desktop")
+    jvm("desktop") {
+        compilerOptions {
+            freeCompilerArgs.addAll(
+                "-Xskip-metadata-version-check",
+                "-Xskip-prerelease-check"
+            )
+        }
+    }
 
     sourceSets {
         commonMain.dependencies {

@@ -5,6 +5,6 @@ import com.roxy.pdftoolkit.ui.tools.scan.RoxyScanViewModel
 import org.koin.dsl.module
 
 val roxyCommonModule = module {
-    factory { RoxyMergeViewModel(get()) }
-    factory { RoxyScanViewModel(get()) }
+    factory<RoxyMergeViewModel> { RoxyMergeViewModel(get()) }
+    factory<RoxyScanViewModel> { RoxyScanViewModel(get()) }
 }

@@ -161,3 +161,12 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.koin.android)
 }
+
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    compilerOptions {
+        freeCompilerArgs.addAll(
+            "-Xskip-metadata-version-check",
+            "-Xskip-prerelease-check"
+        )
+    }
+}

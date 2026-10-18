@@ -10,5 +10,14 @@ subprojects {
     tasks.matching { it.name.startsWith("check") && it.name.endsWith("AarMetadata") }.configureEach {
         enabled = false
     }
+
+    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask<*>>().configureEach {
+        compilerOptions {
+            freeCompilerArgs.addAll(
+                "-Xskip-metadata-version-check",
+                "-Xskip-prerelease-check"
+            )
+        }
+    }
 }
 

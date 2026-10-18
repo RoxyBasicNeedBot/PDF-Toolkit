@@ -60,12 +60,16 @@ fun RoxyApp(
         }
 
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .roxyBackdropSource(backdrop)
+            modifier = Modifier.fillMaxSize()
         ) {
-            // 1. Animated background mesh
-            RoxyMeshBackground()
+            // 1. Animated background mesh (Isolate as the only backdrop source layer)
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .roxyBackdropSource(backdrop)
+            ) {
+                RoxyMeshBackground()
+            }
 
             // 2. Active Screen Content
             when {

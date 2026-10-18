@@ -124,11 +124,13 @@ fun Modifier.roxyLiquidGlass(
                 blur(blurRadius.toPx())
 
                 // Tier 3 only: Real-time optical lens refraction & chromatic aberration
-                if (tier == RoxyDeviceTier.TIER_3_FULL_AGSL) {
+                if (tier == RoxyDeviceTier.TIER_3_FULL_AGSL && size.minDimension > 1f) {
                     val press = interaction?.pressProgress ?: 0f
+                    val refHeight = (20.dp.toPx() + 6.dp.toPx() * press).coerceAtLeast(1f)
+                    val refAmount = (size.minDimension / 2f).coerceAtLeast(1f)
                     lens(
-                        refractionHeight = 20.dp.toPx() + 6.dp.toPx() * press,
-                        refractionAmount = size.minDimension / 2f,
+                        refractionHeight = refHeight,
+                        refractionAmount = refAmount,
                         chromaticAberration = true
                     )
                 }

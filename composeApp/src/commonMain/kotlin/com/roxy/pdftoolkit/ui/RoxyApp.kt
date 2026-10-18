@@ -140,7 +140,7 @@ fun RoxyApp(
                 RoxyGlassNavBar(
                     selectedDestination = currentNavDestination,
                     onDestinationSelected = { dest ->
-                        RoxyCrashTracker.logAction("Nav destination: ${dest.label}", category = "navigation")
+                        RoxyCrashTracker.logAction("Nav destination: ${dest.title}", category = "navigation")
                         currentNavDestination = dest
                     },
                     backdrop = backdrop

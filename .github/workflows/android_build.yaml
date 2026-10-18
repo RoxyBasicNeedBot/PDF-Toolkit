@@ -135,7 +135,7 @@ jobs:
           fi
 
       - name: Build Release APKs and Bundles with R8 Minify & ShrinkResources
-        run: ./gradlew assembleRelease bundleRelease -x test -x lint -Pandroid.injected.lint.check=false
+        run: ./gradlew assembleRelease bundleRelease -x test -x lint -Pandroid.injected.lint.check=false --stacktrace
         env:
           APP_VERSION_NAME: ${{ steps.app_version.outputs.version }}
           APP_VERSION_CODE: ${{ steps.app_version.outputs.version_code }}

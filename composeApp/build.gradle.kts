@@ -59,7 +59,7 @@ kotlin {
             implementation(libs.koin.android)
 
             // Android PDF Engine
-            implementation(libs.pdfbox.android)
+            api(libs.pdfbox.android)
 
             // CameraX Engine
             implementation(libs.androidx.camera.core)

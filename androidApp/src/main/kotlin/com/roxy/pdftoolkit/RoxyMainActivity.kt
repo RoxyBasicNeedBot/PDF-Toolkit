@@ -16,12 +16,12 @@ import com.roxy.pdftoolkit.saf.rememberRoxySafPdfPicker
 import com.roxy.pdftoolkit.saf.rememberRoxySafPdfSaver
 import com.roxy.pdftoolkit.ui.RoxyApp
 import com.roxy.pdftoolkit.ui.tools.merge.RoxyMergeViewModel
-import org.koin.androidx.viewmodel.ext.android.viewModel
+import org.koin.android.ext.android.inject
 
 class RoxyMainActivity : ComponentActivity() {
 
     private val incomingUris = mutableStateListOf<Uri>()
-    private val mergeViewModel: RoxyMergeViewModel by viewModel()
+    private val mergeViewModel: RoxyMergeViewModel by inject()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()

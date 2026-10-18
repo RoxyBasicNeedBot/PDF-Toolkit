@@ -182,6 +182,8 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.koin.android)
+    implementation(libs.koin.core)
+    implementation(libs.pdfbox.android)
     implementation(libs.sentry.android)
 }
 

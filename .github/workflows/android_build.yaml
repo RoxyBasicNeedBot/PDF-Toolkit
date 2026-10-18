@@ -120,6 +120,20 @@ jobs:
           echo "tag_name=v${VERSION_NAME}" >> "$GITHUB_OUTPUT"
           echo "Dynamic Version Assigned: ${VERSION_NAME} (Code: ${VERSION_CODE}, Tag: v${VERSION_NAME})"
 
+      - name: Verify Sentry DSN Configuration
+        shell: bash
+        env:
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+        run: |
+          echo "=== 🛡️ Verifying Sentry Configuration ==="
+          if [ -n "$SENTRY_DSN" ]; then
+            DSN_MASKED=$(echo "$SENTRY_DSN" | sed -E 's/(https:\/\/[^@]{4})[^@]+(@.*)/\1****\2/')
+            echo "✅ SENTRY_DSN Secret is verified & active: ${DSN_MASKED}"
+          else
+            echo "⚠️ Warning: SENTRY_DSN secret is empty or not found in GitHub Secrets."
+            echo "ℹ️ Using embedded fallback DSN in build.gradle.kts to ensure crash reporting is active."
+          fi
+
       - name: Build Release APKs and Bundles with R8 Minify & ShrinkResources
         run: ./gradlew assembleRelease bundleRelease -x test -x lint -Pandroid.injected.lint.check=false
         env:

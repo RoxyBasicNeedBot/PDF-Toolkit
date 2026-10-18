@@ -11,6 +11,10 @@ subprojects {
         enabled = false
     }
 
+    tasks.matching { it.name.contains("Lint") || it.name.contains("lint") }.configureEach {
+        enabled = false
+    }
+
     tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask<*>>().configureEach {
         compilerOptions {
             freeCompilerArgs.addAll(

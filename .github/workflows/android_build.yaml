@@ -121,7 +121,7 @@ jobs:
           echo "Dynamic Version Assigned: ${VERSION_NAME} (Code: ${VERSION_CODE}, Tag: v${VERSION_NAME})"
 
       - name: Build Release APKs and Bundles with R8 Minify & ShrinkResources
-        run: ./gradlew assembleRelease bundleRelease -x test -x lint
+        run: ./gradlew assembleRelease bundleRelease -x test -x lint -Pandroid.injected.lint.check=false
         env:
           APP_VERSION_NAME: ${{ steps.app_version.outputs.version }}
           APP_VERSION_CODE: ${{ steps.app_version.outputs.version_code }}

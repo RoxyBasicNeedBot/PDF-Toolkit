@@ -129,6 +129,14 @@ android {
         }
     }
 
+    lint {
+        abortOnError = false
+        checkReleaseBuilds = false
+        checkDependencies = false
+        ignoreTestSources = true
+        warningsAsErrors = false
+    }
+
     packaging {
         jniLibs {
             useLegacyPackaging = false

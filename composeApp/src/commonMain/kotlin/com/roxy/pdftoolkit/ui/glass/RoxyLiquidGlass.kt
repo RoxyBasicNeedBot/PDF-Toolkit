@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.lerp as lerpDp
 import androidx.compose.ui.util.lerp
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.layerBackdrop as nativeLayerBackdrop
@@ -109,7 +110,7 @@ fun Modifier.roxyLiquidGlass(
             innerShadow = {
                 val press = interaction?.pressProgress ?: 0f
                 InnerShadow(
-                    radius = lerp(6.dp.toPx(), 12.dp.toPx(), press).dp,
+                    radius = lerpDp(6.dp, 12.dp, press),
                     alpha = lerp(0.3f, 0.6f, press)
                 )
             },
@@ -127,7 +128,7 @@ fun Modifier.roxyLiquidGlass(
                     val press = interaction?.pressProgress ?: 0f
                     lens(
                         refractionHeight = 20.dp.toPx() + 6.dp.toPx() * press,
-                        refractionWidth = size.minDimension / 2f,
+                        refractionAmount = size.minDimension / 2f,
                         chromaticAberration = true
                     )
                 }

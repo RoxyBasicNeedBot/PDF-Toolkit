@@ -30,6 +30,9 @@ class RoxyApplication : Application() {
                 options.isAttachViewHierarchy = false
                 options.setDebug(false)
             }
+            if (secretDsn.isNotBlank()) {
+                Sentry.captureMessage("PDF Toolkit initialized with Sentry successfully!")
+            }
         } catch (e: Exception) {
             Log.e("RoxyApp", "Failed to init Sentry", e)
         }

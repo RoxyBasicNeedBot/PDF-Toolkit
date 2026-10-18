@@ -9,8 +9,8 @@
 -dontwarn javax.swing.**
 
 # Kyant Liquid Glass & Shader Backdrops
--keep class kyant.backdrop.** { *; }
--dontwarn kyant.backdrop.**
+-keep class com.kyant.** { *; }
+-dontwarn com.kyant.**
 -keep class dev.chrisbanes.haze.** { *; }
 -dontwarn dev.chrisbanes.haze.**
 
@@ -24,5 +24,7 @@
 -keep class com.google.mlkit.** { *; }
 -dontwarn com.google.mlkit.**
 
-# Roxy Domain Models
--keep class com.roxy.pdftoolkit.domain.model.** { *; }
+# Roxy Domain Models & UI
+-keep class com.roxy.pdftoolkit.** { *; }
+-keepclassmembers class com.roxy.pdftoolkit.** { *; }
+-dontwarn com.roxy.pdftoolkit.**

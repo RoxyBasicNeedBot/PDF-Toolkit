@@ -2,6 +2,7 @@ package com.roxy.pdftoolkit.ui.tools.scan
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.roxy.pdftoolkit.crash.RoxyCrashTracker
 import com.roxy.pdftoolkit.engine.model.RoxyOperationResult
 import com.roxy.pdftoolkit.engine.scanner.RoxyDocumentQuad
 import com.roxy.pdftoolkit.engine.scanner.RoxyScanFilterType
@@ -22,24 +23,29 @@ class RoxyScanViewModel(
     val state: StateFlow<RoxyScanState> = _state.asStateFlow()
 
     fun onPageCaptured(rawImageBytes: ByteArray) {
+        RoxyCrashTracker.logAction("onPageCaptured byte size: ${rawImageBytes.size}", category = "scan")
         viewModelScope.launch {
-            val detectedQuad = scannerEngine.detectDocumentQuad(rawImageBytes)
-            val initialPage = RoxyScannedPage(
-                id = "page_${pagesList.size + 1}_${System.currentTimeMillis()}",
-                originalImageBytes = rawImageBytes,
-                quad = detectedQuad,
-                filterType = RoxyScanFilterType.MAGIC_CLEAN
-            )
+            try {
+                val detectedQuad = scannerEngine.detectDocumentQuad(rawImageBytes)
+                val initialPage = RoxyScannedPage(
+                    id = "page_${pagesList.size + 1}_${System.currentTimeMillis()}",
+                    originalImageBytes = rawImageBytes,
+                    quad = detectedQuad,
+                    filterType = RoxyScanFilterType.MAGIC_CLEAN
+                )
 
-            val processedBytes = scannerEngine.warpAndFilterPage(initialPage)
-            val readyPage = initialPage.copy(processedImageBytes = processedBytes)
-            pagesList.add(readyPage)
+                val processedBytes = scannerEngine.warpAndFilterPage(initialPage)
+                val readyPage = initialPage.copy(processedImageBytes = processedBytes)
+                pagesList.add(readyPage)
 
-            _state.value = RoxyScanState.ReviewingPage(
-                activePageIndex = pagesList.size - 1,
-                page = readyPage,
-                totalPages = pagesList.size
-            )
+                _state.value = RoxyScanState.ReviewingPage(
+                    activePageIndex = pagesList.size - 1,
+                    page = readyPage,
+                    totalPages = pagesList.size
+                )
+            } catch (e: Exception) {
+                RoxyCrashTracker.captureException(e, tag = "OnPageCaptured")
+            }
         }
     }
 
@@ -96,31 +102,39 @@ class RoxyScanViewModel(
     }
 
     fun compileDocument(outputDestinationUri: String) {
+        RoxyCrashTracker.logAction("compileDocument with ${pagesList.size} pages", category = "scan")
         if (pagesList.isEmpty()) {
             _state.value = RoxyScanState.Error("No pages scanned. Please scan at least one page.")
             return
         }
 
         viewModelScope.launch {
-            scannerEngine.compileToPdf(pagesList, outputDestinationUri).collectLatest { result ->
-                when (result) {
-                    is RoxyOperationResult.Progress -> {
-                        _state.value = RoxyScanState.Compiling(
-                            currentPage = result.currentPage,
-                            totalPages = result.totalPages,
-                            progressPercent = result.percent
-                        )
-                    }
-                    is RoxyOperationResult.Success -> {
-                        _state.value = RoxyScanState.Success(
-                            outputUri = result.outputUri,
-                            pageCount = result.pageCount
-                        )
-                    }
-                    is RoxyOperationResult.Error -> {
-                        _state.value = RoxyScanState.Error(result.userFriendlyMessage)
+            try {
+                scannerEngine.compileToPdf(pagesList, outputDestinationUri).collectLatest { result ->
+                    when (result) {
+                        is RoxyOperationResult.Progress -> {
+                            _state.value = RoxyScanState.Compiling(
+                                currentPage = result.currentPage,
+                                totalPages = result.totalPages,
+                                progressPercent = result.percent
+                            )
+                        }
+                        is RoxyOperationResult.Success -> {
+                            RoxyCrashTracker.logAction("compileDocument success: ${result.pageCount} pages", category = "scan")
+                            _state.value = RoxyScanState.Success(
+                                outputUri = result.outputUri,
+                                pageCount = result.pageCount
+                            )
+                        }
+                        is RoxyOperationResult.Error -> {
+                            RoxyCrashTracker.logAction("compileDocument error: ${result.userFriendlyMessage}", category = "scan")
+                            _state.value = RoxyScanState.Error(result.userFriendlyMessage)
+                        }
                     }
                 }
+            } catch (e: Exception) {
+                RoxyCrashTracker.captureException(e, tag = "CompileDocument")
+                _state.value = RoxyScanState.Error("Compilation failed: ${e.message}")
             }
         }
     }

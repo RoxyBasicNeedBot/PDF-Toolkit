@@ -11,6 +11,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.roxy.pdftoolkit.crash.RoxyCrashTracker
 import com.roxy.pdftoolkit.saf.rememberRoxySafPdfPicker
 import com.roxy.pdftoolkit.saf.rememberRoxySafPdfSaver
 import com.roxy.pdftoolkit.ui.RoxyApp
@@ -25,6 +26,7 @@ class RoxyMainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        RoxyCrashTracker.logAction("RoxyMainActivity onCreate", category = "lifecycle")
 
         handleIncomingIntent(intent)
 

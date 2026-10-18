@@ -17,6 +17,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.roxy.pdftoolkit.crash.RoxyCrashTracker
 import com.roxy.pdftoolkit.ui.glass.rememberRoxyBackdrop
 import com.roxy.pdftoolkit.ui.glass.roxyBackdropSource
 import com.roxy.pdftoolkit.ui.home.RoxyHomeScreen
@@ -98,13 +99,19 @@ fun RoxyApp(
                         is RoxyNavDestination.Tools -> {
                             RoxyHomeScreen(
                                 backdrop = backdrop,
-                                onToolClick = { toolId -> activeToolId = toolId }
+                                onToolClick = { toolId ->
+                                    RoxyCrashTracker.logAction("Tool clicked: $toolId", category = "ui")
+                                    activeToolId = toolId
+                                }
                             )
                         }
                         is RoxyNavDestination.Files -> {
                             RoxyHomeScreen(
                                 backdrop = backdrop,
-                                onToolClick = { toolId -> activeToolId = toolId }
+                                onToolClick = { toolId ->
+                                    RoxyCrashTracker.logAction("Tool clicked: $toolId", category = "ui")
+                                    activeToolId = toolId
+                                }
                             )
                         }
                         is RoxyNavDestination.Scan -> {
@@ -113,7 +120,10 @@ fun RoxyApp(
                         is RoxyNavDestination.Settings -> {
                             RoxyHomeScreen(
                                 backdrop = backdrop,
-                                onToolClick = { toolId -> activeToolId = toolId }
+                                onToolClick = { toolId ->
+                                    RoxyCrashTracker.logAction("Tool clicked: $toolId", category = "ui")
+                                    activeToolId = toolId
+                                }
                             )
                         }
                     }
@@ -129,7 +139,10 @@ fun RoxyApp(
             ) {
                 RoxyGlassNavBar(
                     selectedDestination = currentNavDestination,
-                    onDestinationSelected = { currentNavDestination = it },
+                    onDestinationSelected = { dest ->
+                        RoxyCrashTracker.logAction("Nav destination: ${dest.label}", category = "navigation")
+                        currentNavDestination = dest
+                    },
                     backdrop = backdrop
                 )
             }

@@ -2,6 +2,7 @@ package com.roxy.pdftoolkit.ui.tools.merge
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.roxy.pdftoolkit.crash.RoxyCrashTracker
 import com.roxy.pdftoolkit.engine.RoxyPdfEngine
 import com.roxy.pdftoolkit.engine.model.RoxyOperationResult
 import com.roxy.pdftoolkit.engine.model.RoxyPdfDocument
@@ -21,8 +22,10 @@ class RoxyMergeViewModel(
     private val selectedDocuments = mutableListOf<RoxyPdfDocument>()
 
     fun addDocuments(uris: List<String>) {
+        RoxyCrashTracker.logAction("Merge addDocuments: ${uris.size} URIs", category = "merge")
         viewModelScope.launch {
-            for (uri in uris) {
+            try {
+                for (uri in uris) {
                 // Avoid duplicates
                 if (selectedDocuments.none { it.uri == uri }) {
                     val metaResult = pdfEngine.getDocumentMetadata(uri)
@@ -38,11 +41,15 @@ class RoxyMergeViewModel(
                     selectedDocuments.add(doc)
                 }
             }
+            } catch (e: Exception) {
+                RoxyCrashTracker.captureException(e, tag = "MergeAddDocs")
+            }
             updateFilesState()
         }
     }
 
     fun removeDocument(document: RoxyPdfDocument) {
+        RoxyCrashTracker.logAction("Merge removeDocument: ${document.displayName}", category = "merge")
         selectedDocuments.remove(document)
         updateFilesState()
     }
@@ -56,38 +63,47 @@ class RoxyMergeViewModel(
     }
 
     fun clear() {
+        RoxyCrashTracker.logAction("Merge clear", category = "merge")
         selectedDocuments.clear()
         _state.value = RoxyMergeState.EmptySelection
     }
 
     fun startMerge(outputDestinationUri: String) {
+        RoxyCrashTracker.logAction("startMerge invoked with ${selectedDocuments.size} docs", category = "merge")
         if (selectedDocuments.size < 2) {
             _state.value = RoxyMergeState.Error("Please select at least 2 PDF files to merge.")
             return
         }
 
         viewModelScope.launch {
-            val inputUris = selectedDocuments.map { it.uri }
-            pdfEngine.mergePdfs(inputUris, outputDestinationUri).collectLatest { result ->
-                when (result) {
-                    is RoxyOperationResult.Progress -> {
-                        _state.value = RoxyMergeState.Processing(
-                            currentPage = result.currentPage,
-                            totalPages = result.totalPages,
-                            progressPercent = result.percent
-                        )
-                    }
-                    is RoxyOperationResult.Success -> {
-                        _state.value = RoxyMergeState.Success(
-                            outputUri = result.outputUri,
-                            mergedPages = result.pageCount,
-                            outputSizeBytes = result.fileSizeBytes
-                        )
-                    }
-                    is RoxyOperationResult.Error -> {
-                        _state.value = RoxyMergeState.Error(result.userFriendlyMessage)
+            try {
+                val inputUris = selectedDocuments.map { it.uri }
+                pdfEngine.mergePdfs(inputUris, outputDestinationUri).collectLatest { result ->
+                    when (result) {
+                        is RoxyOperationResult.Progress -> {
+                            _state.value = RoxyMergeState.Processing(
+                                currentPage = result.currentPage,
+                                totalPages = result.totalPages,
+                                progressPercent = result.percent
+                            )
+                        }
+                        is RoxyOperationResult.Success -> {
+                            RoxyCrashTracker.logAction("Merge success: ${result.pageCount} pages", category = "merge")
+                            _state.value = RoxyMergeState.Success(
+                                outputUri = result.outputUri,
+                                mergedPages = result.pageCount,
+                                outputSizeBytes = result.fileSizeBytes
+                            )
+                        }
+                        is RoxyOperationResult.Error -> {
+                            RoxyCrashTracker.logAction("Merge error: ${result.userFriendlyMessage}", category = "merge")
+                            _state.value = RoxyMergeState.Error(result.userFriendlyMessage)
+                        }
                     }
                 }
+            } catch (e: Exception) {
+                RoxyCrashTracker.captureException(e, tag = "StartMergeExecution")
+                _state.value = RoxyMergeState.Error("An unexpected error occurred during merge: ${e.message}")
             }
         }
     }

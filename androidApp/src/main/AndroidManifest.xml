@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- 100% Offline-First: No android.permission.INTERNET needed! -->
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:name=".RoxyApplication"
@@ -11,6 +11,10 @@
         android:roundIcon="@android:drawable/sym_def_app_icon"
         android:supportsRtl="true"
         android:theme="@style/Theme.RoxyPdfToolkit">
+
+        <!-- Sentry.io Crash Reporting -->
+        <meta-data android:name="io.sentry.auto-init" android:value="true" />
+        <meta-data android:name="io.sentry.traces.sample-rate" android:value="1.0" />
 
         <activity
             android:name=".RoxyMainActivity"

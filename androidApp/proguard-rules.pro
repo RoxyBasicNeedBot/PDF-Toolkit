@@ -63,11 +63,27 @@
 -keep class coil3.** { *; }
 -dontwarn coil3.**
 
+## Android Core Components (Must NEVER be stripped or renamed)
+-keep public class * extends android.app.Application {
+    <init>();
+    void attachBaseContext(android.content.Context);
+    void onCreate();
+}
+-keep public class * extends android.app.Activity {
+    <init>();
+}
+-keep public class com.roxy.pdftoolkit.RoxyApplication { *; }
+-keep public class com.roxy.pdftoolkit.RoxyMainActivity { *; }
+
 ## Kyant Liquid Glass & Shader Backdrops
--keep class kyant.backdrop.** { *; }
--dontwarn kyant.backdrop.**
+-keep class com.kyant.** { *; }
+-dontwarn com.kyant.**
 -keep class dev.chrisbanes.haze.** { *; }
 -dontwarn dev.chrisbanes.haze.**
+
+## Sentry.io Crash Reporting
+-keep class io.sentry.** { *; }
+-dontwarn io.sentry.**
 
 ## PDFBox-Android Engine
 -keep class com.tom_roush.pdfbox.** { *; }
@@ -88,8 +104,9 @@
 -dontwarn org.tensorflow.lite.**
 
 ## Roxy Domain Models & Architecture
--keep class com.roxy.pdftoolkit.domain.model.** { *; }
--keep class com.roxy.pdftoolkit.presentation.** { *; }
+-keep class com.roxy.pdftoolkit.** { *; }
+-keepclassmembers class com.roxy.pdftoolkit.** { *; }
+-dontwarn com.roxy.pdftoolkit.**
 -keepclasseswithmembers class * implements java.io.Serializable {
     private void writeObject(java.io.ObjectOutputStream);
     private void readObject(java.io.ObjectInputStream);

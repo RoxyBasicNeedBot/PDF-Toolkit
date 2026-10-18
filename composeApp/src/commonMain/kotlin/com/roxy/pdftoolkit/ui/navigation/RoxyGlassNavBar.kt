@@ -55,7 +55,8 @@ fun RoxyGlassNavBar(
     modifier: Modifier = Modifier,
     destinations: List<RoxyNavDestination> = RoxyNavDestination.items
 ) {
-    val selectedIndex = destinations.indexOf(selectedDestination).coerceAtLeast(0)
+    val validDestinations = remember(destinations) { destinations.filterNotNull() }
+    val selectedIndex = validDestinations.indexOf(selectedDestination).coerceAtLeast(0)
     val interaction = rememberRoxyGlassInteraction()
 
     // Smooth spring animation for sliding indicator
@@ -114,7 +115,7 @@ fun RoxyGlassNavBar(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                destinations.forEachIndexed { index, destination ->
+                validDestinations.forEachIndexed { index, destination ->
                     val isSelected = index == selectedIndex
 
                     Column(

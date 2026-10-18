@@ -21,6 +21,9 @@ sealed class RoxyNavDestination(
     data object Settings : RoxyNavDestination("settings", "Settings", Icons.Rounded.Settings)
 
     companion object {
-        val items = listOf(Tools, Files, Scan, Settings)
+        val items: List<RoxyNavDestination>
+            get() = listOf(Tools, Files, Scan, Settings)
+
+        fun all(): List<RoxyNavDestination> = listOf(Tools, Files, Scan, Settings)
     }
 }

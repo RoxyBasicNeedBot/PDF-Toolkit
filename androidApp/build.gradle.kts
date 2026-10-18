@@ -15,6 +15,34 @@ android {
         versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        vectorDrawables.useSupportLibrary = true
+    }
+
+    flavorDimensions += listOf("abi")
+    productFlavors {
+        create("universal") {
+            dimension = "abi"
+            isDefault = true
+            ndk {
+                abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
+            }
+            buildConfigField("String", "ARCHITECTURE", "\"universal\"")
+        }
+        create("arm64") {
+            dimension = "abi"
+            ndk { abiFilters += "arm64-v8a" }
+            buildConfigField("String", "ARCHITECTURE", "\"arm64\"")
+        }
+        create("armeabi") {
+            dimension = "abi"
+            ndk { abiFilters += "armeabi-v7a" }
+            buildConfigField("String", "ARCHITECTURE", "\"armeabi\"")
+        }
+        create("x86_64") {
+            dimension = "abi"
+            ndk { abiFilters += "x86_64" }
+            buildConfigField("String", "ARCHITECTURE", "\"x86_64\"")
+        }
     }
 
     buildTypes {
@@ -27,6 +55,10 @@ android {
             )
             signingConfig = signingConfigs.getByName("debug")
         }
+        debug {
+            applicationIdSuffix = ".debug"
+            isDebuggable = true
+        }
     }
 
     compileOptions {
@@ -36,11 +68,48 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
+    }
+
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
+    }
+
+    bundle {
+        language {
+            enableSplit = false
+        }
+        density {
+            enableSplit = true
+        }
+        abi {
+            enableSplit = true
+        }
     }
 
     packaging {
+        jniLibs {
+            useLegacyPackaging = false
+            keepDebugSymbols += listOf(
+                "**/libandroidx.graphics.path.so",
+                "**/libtensorflowlite_jni.so"
+            )
+        }
         resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += listOf(
+                "/META-INF/{AL2.0,LGPL2.1}",
+                "META-INF/NOTICE.md",
+                "META-INF/CONTRIBUTORS.md",
+                "META-INF/LICENSE.md",
+                "META-INF/DEPENDENCIES",
+                "META-INF/LICENSE",
+                "META-INF/LICENSE.txt",
+                "META-INF/NOTICE",
+                "META-INF/NOTICE.txt",
+                "META-INF/INDEX.LIST",
+                "META-INF/*.kotlin_module"
+            )
         }
     }
 }

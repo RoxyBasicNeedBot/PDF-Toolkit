@@ -33,12 +33,16 @@ fun RoxyToolScaffold(
     val backdrop = rememberRoxyBackdrop()
 
     Box(
-        modifier = modifier
-            .fillMaxSize()
-            .roxyBackdropSource(backdrop)
+        modifier = modifier.fillMaxSize()
     ) {
-        // 1. Organic Mesh Background Tinted with Tool's Accent Color
-        RoxyMeshBackground(accentColor = accentColor)
+        // 1. Organic Mesh Background Tinted with Tool's Accent Color (Isolated backdrop source layer)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .roxyBackdropSource(backdrop)
+        ) {
+            RoxyMeshBackground(accentColor = accentColor)
+        }
 
         // 2. Main Content & Header
         Column(

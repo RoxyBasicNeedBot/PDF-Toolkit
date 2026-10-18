@@ -23,6 +23,13 @@ haze = "1.1.1"
 # PDF Engine (Clean Android & JVM)
 pdfbox-android = "2.0.27.0"
 
+# CameraX (Revealed by REA from Adobe Scan libimage_processing_util_jni.so)
+camerax = "1.4.0"
+
+# Machine Learning & Document Scanner (Revealed by REA from libMagicClean.so)
+tensorflow-lite = "2.16.1"
+mlkit-document-scanner = "16.0.0-beta1"
+
 # Dependency Injection & Async
 koin = "4.0.0"
 coroutines = "1.9.0"
@@ -44,6 +51,17 @@ haze = { module = "dev.chrisbanes.haze:haze", version.ref = "haze" }
 
 # PDF Processing
 pdfbox-android = { module = "com.tom-roush:pdfbox-android", version.ref = "pdfbox-android" }
+
+# CameraX
+androidx-camera-core = { module = "androidx.camera:camera-core", version.ref = "camerax" }
+androidx-camera-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "camerax" }
+androidx-camera-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "camerax" }
+androidx-camera-view = { module = "androidx.camera:camera-view", version.ref = "camerax" }
+
+# Machine Learning & Document Scanner (TFLite + ML Kit)
+tensorflow-lite = { module = "org.tensorflow:tensorflow-lite", version.ref = "tensorflow-lite" }
+tensorflow-lite-gpu = { module = "org.tensorflow:tensorflow-lite-gpu", version.ref = "tensorflow-lite" }
+mlkit-document-scanner = { module = "com.google.android.gms:play-services-mlkit-document-scanner", version.ref = "mlkit-document-scanner" }
 
 # Coroutines & Architecture
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }

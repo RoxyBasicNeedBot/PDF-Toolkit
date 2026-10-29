@@ -144,18 +144,18 @@ private fun CameraCaptureView(
     onFinishScanning: () -> Unit
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
-        // 1. Camera Viewfinder Simulation with Live Corner Detection Quad
+        // 1. Camera Viewfinder with Adobe Scan-Style Crop Guide Quad
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 20.dp, vertical = 12.dp)
-                .clip(RoundedCornerShape(24.dp))
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .clip(RoundedCornerShape(20.dp))
         ) {
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val w = size.width
                 val h = size.height
 
-                // Draw detected document quadrilateral boundary (like Adobe Scan)
+                // Draw detected document quadrilateral boundary (Adobe Scan #2175C8)
                 val path = Path().apply {
                     moveTo(liveQuad.topLeft.x * w, liveQuad.topLeft.y * h)
                     lineTo(liveQuad.topRight.x * w, liveQuad.topRight.y * h)
@@ -164,104 +164,175 @@ private fun CameraCaptureView(
                     close()
                 }
 
+                // Semi-transparent blue fill
                 drawPath(
                     path = path,
-                    color = RoxyColor.ScanAccent.copy(alpha = 0.25f)
+                    color = RoxyColor.CropGuideFill
                 )
 
+                // High-precision guide line
                 drawPath(
                     path = path,
-                    color = RoxyColor.ScanAccent,
-                    style = Stroke(width = 4.dp.toPx())
+                    color = RoxyColor.CropGuide,
+                    style = Stroke(width = 3.dp.toPx())
                 )
 
-                // 4 Interactive Corner Dots
-                val radius = 10.dp.toPx()
-                drawCircle(Color.White, radius, Offset(liveQuad.topLeft.x * w, liveQuad.topLeft.y * h))
-                drawCircle(Color.White, radius, Offset(liveQuad.topRight.x * w, liveQuad.topRight.y * h))
-                drawCircle(Color.White, radius, Offset(liveQuad.bottomRight.x * w, liveQuad.bottomRight.y * h))
-                drawCircle(Color.White, radius, Offset(liveQuad.bottomLeft.x * w, liveQuad.bottomLeft.y * h))
+                // 4 Interactive Magnifying Corner Handles (Adobe Scan Style)
+                val outerRadius = 12.dp.toPx()
+                val innerRadius = 5.dp.toPx()
+                val corners = listOf(
+                    Offset(liveQuad.topLeft.x * w, liveQuad.topLeft.y * h),
+                    Offset(liveQuad.topRight.x * w, liveQuad.topRight.y * h),
+                    Offset(liveQuad.bottomRight.x * w, liveQuad.bottomRight.y * h),
+                    Offset(liveQuad.bottomLeft.x * w, liveQuad.bottomLeft.y * h)
+                )
+
+                for (corner in corners) {
+                    drawCircle(Color.White, outerRadius, corner)
+                    drawCircle(RoxyColor.CropGuide, outerRadius, corner, style = Stroke(width = 2.5.dp.toPx()))
+                    drawCircle(RoxyColor.CropGuide, innerRadius, corner)
+                }
             }
         }
 
-        // 2. Scanned Pages Pill Badge
-        if (pagesCount > 0) {
-            RoxyGlassCard(
-                backdrop = backdrop,
-                shape = RoundedCornerShape(percent = 50),
-                tintColor = RoxyColor.ScanAccent,
-                scrimAlpha = 0.4f,
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .padding(top = 16.dp)
-            ) {
-                Text(
-                    text = "$pagesCount ${if (pagesCount == 1) "Page" else "Pages"} Scanned",
-                    color = Color.White,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 13.sp,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
-                )
-            }
+        // 2. Top Coachmark Banner (Adobe Scan Style)
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 16.dp)
+                .clip(RoundedCornerShape(percent = 50))
+                .background(Color(0xCC0D1117))
+                .padding(horizontal = 16.dp, vertical = 6.dp)
+        ) {
+            Text(
+                text = if (pagesCount == 0) "Looking for document..." else "$pagesCount ${if (pagesCount == 1) "Page" else "Pages"} Scanned",
+                color = Color.White,
+                fontWeight = FontWeight.Medium,
+                fontSize = 12.sp
+            )
         }
 
-        // 3. Shutter Dock at Bottom
-        Row(
+        // 3. Bottom Controls Area (Mode Selector + Shutter Dock)
+        Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .padding(bottom = 24.dp, start = 24.dp, end = 24.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(bottom = 20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Placeholder for left balance
-            Spacer(modifier = Modifier.size(54.dp))
-
-            // Signature Large Liquid Glass Shutter Button
-            RoxyGlassCard(
-                backdrop = backdrop,
-                shape = CircleShape,
-                tintColor = RoxyColor.ScanAccent,
-                scrimAlpha = 0.35f,
-                blurRadius = 16.dp,
-                onClick = onCaptureTrigger,
-                modifier = Modifier.size(76.dp)
+            // Document Mode Selector (Adobe Scan: Whiteboard, Book, Document, ID Card)
+            Row(
+                modifier = Modifier
+                    .padding(bottom = 16.dp)
+                    .clip(RoundedCornerShape(percent = 50))
+                    .background(Color(0x99000000))
+                    .padding(horizontal = 12.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(56.dp)
-                        .clip(CircleShape)
-                        .clickable(onClick = onCaptureTrigger),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.CameraAlt,
-                        contentDescription = "Capture Document",
-                        tint = Color.White,
-                        modifier = Modifier.size(30.dp)
-                    )
-                }
+                Text(
+                    text = "Whiteboard",
+                    color = RoxyColor.TextSecondary,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Normal
+                )
+                Text(
+                    text = "Document",
+                    color = RoxyColor.ScanAccent,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "ID Card",
+                    color = RoxyColor.TextSecondary,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Normal
+                )
+                Text(
+                    text = "Book",
+                    color = RoxyColor.TextSecondary,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Normal
+                )
             }
 
-            // Finish & Save Button
-            if (pagesCount > 0) {
+            // Shutter Row (Gallery, Shutter Button, Page Review Thumbnail)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 28.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Left: Photos / Gallery Icon
                 RoxyGlassCard(
                     backdrop = backdrop,
-                    shape = RoundedCornerShape(14.dp),
-                    tintColor = RoxyColor.ConvertAccent,
+                    shape = CircleShape,
                     scrimAlpha = 0.35f,
-                    onClick = onFinishScanning,
-                    modifier = Modifier.size(54.dp)
+                    onClick = onCaptureTrigger,
+                    modifier = Modifier.size(52.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Rounded.PictureAsPdf,
-                        contentDescription = "Save PDF",
+                        imageVector = Icons.Rounded.AddPhotoAlternate,
+                        contentDescription = "Import from Gallery",
                         tint = Color.White,
                         modifier = Modifier.size(24.dp)
                     )
                 }
-            } else {
-                Spacer(modifier = Modifier.size(54.dp))
+
+                // Center: Adobe Scan-Style Shutter Button (Dual-Ring Solid White + Blue Icon)
+                Box(
+                    modifier = Modifier
+                        .size(80.dp)
+                        .clip(CircleShape)
+                        .background(Color(0x331473E6))
+                        .clickable(onClick = onCaptureTrigger),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(64.dp)
+                            .clip(CircleShape)
+                            .background(Color.White),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.CameraAlt,
+                            contentDescription = "Capture Document",
+                            tint = RoxyColor.ScanAccent,
+                            modifier = Modifier.size(30.dp)
+                        )
+                    }
+                }
+
+                // Right: Scanned Pages Counter / Review Button
+                if (pagesCount > 0) {
+                    Box(
+                        modifier = Modifier
+                            .size(52.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(RoxyColor.ScanAccent)
+                            .clickable(onClick = onFinishScanning),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                imageVector = Icons.Rounded.PictureAsPdf,
+                                contentDescription = "Review Scanned PDF",
+                                tint = Color.White,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Text(
+                                text = "$pagesCount",
+                                color = Color.White,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                } else {
+                    Spacer(modifier = Modifier.size(52.dp))
+                }
             }
         }
     }
@@ -281,70 +352,110 @@ private fun PageReviewView(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 20.dp, vertical = 10.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Top Toolbar: Page Info & Delete
+        // Top Toolbar: Page Counter & Save PDF Button (Adobe Scan Top-Right Header)
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Page ${pageIndex + 1} of $totalPages",
+                text = "${pageIndex + 1} / $totalPages",
                 color = Color.White,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 15.sp
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp
             )
 
-            RoxyGlassCard(
-                backdrop = backdrop,
-                shape = CircleShape,
-                tintColor = Color(0xFFEF4444),
-                scrimAlpha = 0.3f,
-                onClick = onDeletePage,
-                modifier = Modifier.size(40.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.Delete,
-                    contentDescription = "Delete Page",
-                    tint = Color(0xFFEF4444),
-                    modifier = Modifier.size(20.dp)
-                )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                // Delete Page Button
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(Color(0x33EF4444))
+                        .clickable(onClick = onDeletePage),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Delete,
+                        contentDescription = "Delete Page",
+                        tint = Color(0xFFEF4444),
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+
+                // Adobe Scan-Style "Save PDF" Action Button in Top Header
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(percent = 50))
+                        .background(RoxyColor.ScanAccent)
+                        .clickable(onClick = onSavePdf)
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.PictureAsPdf,
+                            contentDescription = "Save PDF",
+                            tint = Color.White,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = "Save PDF",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp
+                        )
+                    }
+                }
             }
         }
 
-        Spacer(modifier = Modifier.height(14.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
         // Center: Warped & Cleaned Document Preview Card
-        RoxyGlassCard(
-            backdrop = backdrop,
-            shape = RoundedCornerShape(20.dp),
-            scrimAlpha = 0.25f,
+        Box(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(Color(0xFF0F1520))
+                .border(1.dp, Color(0x221473E6), RoundedCornerShape(16.dp)),
+            contentAlignment = Alignment.Center
         ) {
             Column(
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier.padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                Icon(
-                    imageVector = Icons.Rounded.AutoFixHigh,
-                    contentDescription = "Magic Cleaned",
-                    tint = RoxyColor.ScanAccent,
-                    modifier = Modifier.size(48.dp)
-                )
-                Spacer(modifier = Modifier.height(8.dp))
+                Box(
+                    modifier = Modifier
+                        .size(60.dp)
+                        .clip(CircleShape)
+                        .background(Color(0x221473E6)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.AutoFixHigh,
+                        contentDescription = "Magic Cleaned",
+                        tint = RoxyColor.ScanAccent,
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    text = "Applied: ${page.filterType.displayName}",
+                    text = page.filterType.displayName,
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
+                    fontSize = 17.sp
                 )
                 Text(
-                    text = "Perspective Warped • Shadow Removed",
+                    text = "Luminance Normalized • Shadow Removed",
                     color = RoxyColor.TextSecondary,
                     fontSize = 12.sp,
                     modifier = Modifier.padding(top = 4.dp)
@@ -352,59 +463,101 @@ private fun PageReviewView(
             }
         }
 
-        Spacer(modifier = Modifier.height(14.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
-        // Filter Switcher Dock (Magic Clean, Grayscale, B&W, Original)
+        // Filter Switcher Dock (Adobe Scan: Magic Clean, Original, Grayscale, B&W)
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(14.dp))
+                .background(Color(0xFF141A26))
+                .padding(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             RoxyScanFilterType.entries.forEach { filter ->
                 val isSelected = page.filterType == filter
-                RoxyGlassCard(
-                    backdrop = backdrop,
-                    shape = RoundedCornerShape(12.dp),
-                    tintColor = if (isSelected) RoxyColor.ScanAccent else Color.Transparent,
-                    scrimAlpha = if (isSelected) 0.4f else 0.2f,
-                    onClick = { onFilterSelected(filter) },
-                    modifier = Modifier.weight(1f)
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(if (isSelected) RoxyColor.ScanAccent else Color.Transparent)
+                        .clickable { onFilterSelected(filter) }
+                        .padding(vertical = 10.dp),
+                    contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = filter.displayName,
                         color = if (isSelected) Color.White else RoxyColor.TextSecondary,
-                        fontSize = 11.sp,
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(vertical = 10.dp)
+                        fontSize = 12.sp,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                        textAlign = TextAlign.Center
                     )
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         // Action Buttons: Add Page & Save Document
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            RoxyGlassButton(
-                text = "Add Page",
-                icon = Icons.Rounded.AddPhotoAlternate,
-                backdrop = backdrop,
-                accentColor = RoxyColor.ScanAccent,
-                onClick = onAddAnotherPage,
-                modifier = Modifier.weight(1f)
-            )
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color(0xFF1E2638))
+                    .clickable(onClick = onAddAnotherPage)
+                    .padding(vertical = 12.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.AddPhotoAlternate,
+                        contentDescription = "Add Page",
+                        tint = Color.White,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Text(
+                        text = "Add Page",
+                        color = Color.White,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 13.sp
+                    )
+                }
+            }
 
-            RoxyGlassButton(
-                text = "Save PDF",
-                icon = Icons.Rounded.PictureAsPdf,
-                backdrop = backdrop,
-                accentColor = RoxyColor.ConvertAccent,
-                onClick = onSavePdf,
-                modifier = Modifier.weight(1f)
-            )
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(RoxyColor.ScanAccent)
+                    .clickable(onClick = onSavePdf)
+                    .padding(vertical = 12.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.PictureAsPdf,
+                        contentDescription = "Save PDF",
+                        tint = Color.White,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Text(
+                        text = "Save PDF",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp
+                    )
+                }
+            }
         }
     }
 }

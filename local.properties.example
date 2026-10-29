@@ -19,6 +19,6 @@ TOPIC_ID=
 API_ID=
 API_HASH=
 
-# --- Sentry.io Secrets (for live crash reporting & tracing) ---
-# SENTRY_DSN     : Sentry DSN URL from Sentry.io project settings (e.g., https://xxx@xxx.ingest.sentry.io/xxx)
-SENTRY_DSN=
+# --- Firebase Secrets (for Crashlytics, Analytics & Native NDK Crash Tracking) ---
+# GOOGLE_SERVICES_JSON : Paste the full JSON content or base64 string of google-services.json
+# In GitHub Secrets: Name = GOOGLE_SERVICES_JSON, Value = (content of google-services.json)

@@ -120,26 +120,32 @@ jobs:
           echo "tag_name=v${VERSION_NAME}" >> "$GITHUB_OUTPUT"
           echo "Dynamic Version Assigned: ${VERSION_NAME} (Code: ${VERSION_CODE}, Tag: v${VERSION_NAME})"
 
-      - name: Verify Sentry DSN Configuration
+      - name: Setup Firebase Configuration (google-services.json)
         shell: bash
         env:
-          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+          BASE64_GOOGLE_SERVICES_JSON: ${{ secrets.BASE64_GOOGLE_SERVICES_JSON }}
         run: |
-          echo "=== 🛡️ Verifying Sentry Configuration ==="
-          if [ -n "$SENTRY_DSN" ]; then
-            DSN_MASKED=$(echo "$SENTRY_DSN" | sed -E 's/(https:\/\/[^@]{4})[^@]+(@.*)/\1****\2/')
-            echo "✅ SENTRY_DSN Secret is verified & active: ${DSN_MASKED}"
+          echo "=== 🔥 Setting up Firebase Google Services Configuration from GitHub Secrets ==="
+          mkdir -p androidApp
+          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
+            echo "$GOOGLE_SERVICES_JSON" > androidApp/google-services.json
+            echo "✅ Successfully loaded google-services.json from GitHub Secrets (GOOGLE_SERVICES_JSON)."
+          elif [ -n "$BASE64_GOOGLE_SERVICES_JSON" ]; then
+            echo "$BASE64_GOOGLE_SERVICES_JSON" | base64 -d > androidApp/google-services.json
+            echo "✅ Successfully decoded google-services.json from Base64 GitHub Secrets."
           else
-            echo "⚠️ Warning: SENTRY_DSN secret is empty or not found in GitHub Secrets."
-            echo "ℹ️ Using embedded fallback DSN in build.gradle.kts to ensure crash reporting is active."
+            echo "❌ ERROR: GOOGLE_SERVICES_JSON secret not found in GitHub Repository Secrets!"
+            echo "Please go to Settings > Secrets and variables > Actions, and add GOOGLE_SERVICES_JSON."
+            exit 1
           fi
+          test -s androidApp/google-services.json && echo "✅ google-services.json verified ($(wc -c < androidApp/google-services.json) bytes)"
 
       - name: Build Release APKs and Bundles with R8 Minify & ShrinkResources
         run: ./gradlew assembleRelease bundleRelease -x test -x lint -Pandroid.injected.lint.check=false --stacktrace
         env:
           APP_VERSION_NAME: ${{ steps.app_version.outputs.version }}
           APP_VERSION_CODE: ${{ steps.app_version.outputs.version_code }}
-          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD || secrets.KEY_STORE_PASSWORD || 'roxy_release_pass' }}
           KEY_STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD || secrets.KEY_STORE_PASSWORD || 'roxy_release_pass' }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS || secrets.ALIAS || 'roxypdftoolkit' }}

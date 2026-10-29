@@ -81,9 +81,14 @@
 -keep class dev.chrisbanes.haze.** { *; }
 -dontwarn dev.chrisbanes.haze.**
 
-## Sentry.io Crash Reporting
--keep class io.sentry.** { *; }
--dontwarn io.sentry.**
+## Firebase Crashlytics & Analytics
+-keepattributes *Annotation*
+-keepattributes SourceFile,LineNumberTable
+-keep public class * extends java.lang.Exception
+-keepclassmembers class com.google.firebase.crashlytics.** { *; }
+-dontwarn com.google.firebase.crashlytics.**
+-dontwarn com.google.firebase.analytics.**
+-dontwarn com.google.android.gms.measurement.**
 
 ## PDFBox-Android Engine
 -keep class com.tom_roush.pdfbox.** { *; }

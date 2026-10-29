@@ -2,7 +2,7 @@ package com.roxy.pdftoolkit.crash
 
 /**
  * Universal crash tracker and breadcrumb dispatcher for PDF Toolkit.
- * Integrates directly with Sentry.io on Android while maintaining
+ * Integrates directly with Firebase Crashlytics on Android while maintaining
  * multiplatform compatibility.
  */
 object RoxyCrashTracker {
@@ -20,7 +20,7 @@ object RoxyCrashTracker {
     }
 
     /**
-     * Record a user action or lifecycle event as a Sentry breadcrumb.
+     * Record a user action or lifecycle event as a breadcrumb.
      */
     fun logAction(action: String, category: String = "ui") {
         try {
@@ -29,7 +29,7 @@ object RoxyCrashTracker {
     }
 
     /**
-     * Capture and dispatch a handled or unhandled exception directly to Sentry.
+     * Capture and dispatch a handled or unhandled exception directly to Firebase Crashlytics.
      */
     fun captureException(throwable: Throwable, tag: String = "general") {
         try {
@@ -38,12 +38,12 @@ object RoxyCrashTracker {
     }
 
     /**
-     * Trigger an intentional test exception to verify live Sentry connectivity.
+     * Trigger an intentional test exception to verify live Firebase Crashlytics connectivity.
      */
     fun triggerVerificationTest(forceFatalCrash: Boolean = false) {
         logAction("Verification test triggered from UI (fatal=$forceFatalCrash)", category = "test")
-        val testException = IllegalStateException("Roxy PDF Toolkit Sentry Live Verification: Test exception from device")
-        captureException(testException, tag = "SentryLiveTest")
+        val testException = IllegalStateException("Roxy PDF Toolkit Firebase Crashlytics Live Verification: Test exception from device")
+        captureException(testException, tag = "CrashlyticsLiveTest")
         if (forceFatalCrash) {
             throw testException
         }

@@ -2,6 +2,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.google.services)
+    alias(libs.plugins.firebase.crashlytics)
 }
 
 android {
@@ -10,10 +12,6 @@ android {
 
     val envVersionName = System.getenv("APP_VERSION_NAME")
     val envVersionCode = System.getenv("APP_VERSION_CODE")?.toIntOrNull()
-
-    val sentryDsn = System.getenv("SENTRY_DSN")?.takeIf { it.isNotBlank() }
-        ?: (project.findProperty("SENTRY_DSN") as? String)?.takeIf { it.isNotBlank() }
-        ?: "https://2e2030156a1f0e86b6c4baf6d9eb66d1@o4512277906391040.ingest.de.sentry.io/4512277919629392"
 
     defaultConfig {
         applicationId = "com.roxy.pdftoolkit"
@@ -25,8 +23,30 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
 
-        manifestPlaceholders["sentryDsn"] = sentryDsn
-        buildConfigField("String", "SENTRY_DSN", "\"$sentryDsn\"")
+        externalNativeBuild {
+            cmake {
+                cppFlags += "-std=c++17 -O3"
+                arguments += "-DANDROID_STL=c++_shared"
+            }
+        }
+    }
+
+    val cmakeFile = file("src/main/cpp/CMakeLists.txt")
+    val ndkAvailable = sequenceOf(
+        System.getenv("ANDROID_NDK_HOME"),
+        System.getenv("ANDROID_NDK_ROOT"),
+        System.getenv("NDK_HOME")
+    ).any { it != null && file(it).exists() } ||
+        file("${android.sdkDirectory}/ndk").exists() ||
+        System.getenv("CI") == "true" ||
+        System.getenv("GITHUB_ACTIONS") == "true"
+
+    if (cmakeFile.exists() && ndkAvailable) {
+        externalNativeBuild {
+            cmake {
+                path = cmakeFile
+            }
+        }
     }
 
     sourceSets {
@@ -156,7 +176,8 @@ android {
             useLegacyPackaging = false
             keepDebugSymbols += listOf(
                 "**/libandroidx.graphics.path.so",
-                "**/libtensorflowlite_jni.so"
+                "**/libtensorflowlite_jni.so",
+                "**/libroxy_magic_clean.so"
             )
         }
         resources {
@@ -184,7 +205,12 @@ dependencies {
     implementation(libs.koin.android)
     implementation(libs.koin.core)
     implementation(libs.pdfbox.android)
-    implementation(libs.sentry.android)
+    
+    // Firebase Crashlytics, Analytics & NDK Native Crash Tracking
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.crashlytics)
+    implementation(libs.firebase.crashlytics.ndk)
+    implementation(libs.firebase.analytics)
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {

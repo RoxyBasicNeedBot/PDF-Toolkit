@@ -49,65 +49,67 @@ class RoxyAndroidScannerEngine(
         val origWidth = originalBitmap.width.toFloat()
         val origHeight = originalBitmap.height.toFloat()
 
-        // 1. Source 4 Points from Quad
-        val src = floatArrayOf(
-            page.quad.topLeft.x * origWidth, page.quad.topLeft.y * origHeight,
-            page.quad.topRight.x * origWidth, page.quad.topRight.y * origHeight,
-            page.quad.bottomRight.x * origWidth, page.quad.bottomRight.y * origHeight,
-            page.quad.bottomLeft.x * origWidth, page.quad.bottomLeft.y * origHeight
-        )
-
-        // 2. Destination Rectangular Points (Standard A4 Aspect Ratio)
         val targetWidth = 1000f
         val targetHeight = 1414f
-        val dst = floatArrayOf(
-            0f, 0f,
-            targetWidth, 0f,
-            targetWidth, targetHeight,
-            0f, targetHeight
+        val warpedBitmap = Bitmap.createBitmap(targetWidth.toInt(), targetHeight.toInt(), Bitmap.Config.ARGB_8888)
+
+        // 1. Try Native C++ Engine (Modeled after Adobe Scan's libMagicClean.so)
+        val nativeSuccess = RoxyNativeScannerBridge.warpAndFilter(
+            inputBitmap = originalBitmap,
+            quad = page.quad,
+            outputBitmap = warpedBitmap,
+            filterType = page.filterType
         )
 
-        // 3. Perspective Homography Transform
-        val matrix = Matrix()
-        matrix.setPolyToPoly(src, 0, dst, 0, 4)
+        // 2. Fallback to Kotlin / Android Canvas if Native Library is not present
+        if (!nativeSuccess) {
+            val src = floatArrayOf(
+                page.quad.topLeft.x * origWidth, page.quad.topLeft.y * origHeight,
+                page.quad.topRight.x * origWidth, page.quad.topRight.y * origHeight,
+                page.quad.bottomRight.x * origWidth, page.quad.bottomRight.y * origHeight,
+                page.quad.bottomLeft.x * origWidth, page.quad.bottomLeft.y * origHeight
+            )
+            val dst = floatArrayOf(
+                0f, 0f,
+                targetWidth, 0f,
+                targetWidth, targetHeight,
+                0f, targetHeight
+            )
 
-        val warpedBitmap = Bitmap.createBitmap(targetWidth.toInt(), targetHeight.toInt(), Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(warpedBitmap)
+            val matrix = Matrix()
+            matrix.setPolyToPoly(src, 0, dst, 0, 4)
 
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+            val canvas = Canvas(warpedBitmap)
+            val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
 
-        // 4. Apply Enhancement Filter (Magic Clean / Grayscale / B&W)
-        when (page.filterType) {
-            RoxyScanFilterType.MAGIC_CLEAN -> {
-                // Magic Clean: Boost brightness & contrast to eliminate document shadows
-                val cm = ColorMatrix(floatArrayOf(
-                    1.4f, 0f, 0f, 0f, 25f,
-                    0f, 1.4f, 0f, 0f, 25f,
-                    0f, 0f, 1.4f, 0f, 25f,
-                    0f, 0f, 0f, 1f, 0f
-                ))
-                paint.colorFilter = ColorMatrixColorFilter(cm)
+            when (page.filterType) {
+                RoxyScanFilterType.MAGIC_CLEAN -> {
+                    val cm = ColorMatrix(floatArrayOf(
+                        1.4f, 0f, 0f, 0f, 25f,
+                        0f, 1.4f, 0f, 0f, 25f,
+                        0f, 0f, 1.4f, 0f, 25f,
+                        0f, 0f, 0f, 1f, 0f
+                    ))
+                    paint.colorFilter = ColorMatrixColorFilter(cm)
+                }
+                RoxyScanFilterType.GRAYSCALE -> {
+                    val cm = ColorMatrix().apply { setSaturation(0f) }
+                    paint.colorFilter = ColorMatrixColorFilter(cm)
+                }
+                RoxyScanFilterType.BLACK_AND_WHITE -> {
+                    val cm = ColorMatrix(floatArrayOf(
+                        2.0f, 2.0f, 2.0f, 0f, -250f,
+                        2.0f, 2.0f, 2.0f, 0f, -250f,
+                        2.0f, 2.0f, 2.0f, 0f, -250f,
+                        0f, 0f, 0f, 1f, 0f
+                    ))
+                    paint.colorFilter = ColorMatrixColorFilter(cm)
+                }
+                RoxyScanFilterType.ORIGINAL -> {}
             }
-            RoxyScanFilterType.GRAYSCALE -> {
-                val cm = ColorMatrix().apply { setSaturation(0f) }
-                paint.colorFilter = ColorMatrixColorFilter(cm)
-            }
-            RoxyScanFilterType.BLACK_AND_WHITE -> {
-                // High-contrast binarization
-                val cm = ColorMatrix(floatArrayOf(
-                    2.0f, 2.0f, 2.0f, 0f, -250f,
-                    2.0f, 2.0f, 2.0f, 0f, -250f,
-                    2.0f, 2.0f, 2.0f, 0f, -250f,
-                    0f, 0f, 0f, 1f, 0f
-                ))
-                paint.colorFilter = ColorMatrixColorFilter(cm)
-            }
-            RoxyScanFilterType.ORIGINAL -> {
-                // No color alteration
-            }
+
+            canvas.drawBitmap(originalBitmap, matrix, paint)
         }
-
-        canvas.drawBitmap(originalBitmap, matrix, paint)
 
         val outputStream = ByteArrayOutputStream()
         warpedBitmap.compress(Bitmap.CompressFormat.JPEG, 90, outputStream)
